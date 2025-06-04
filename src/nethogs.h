@@ -37,6 +37,7 @@
 #include <malloc.h>
 #endif
 #include <iostream>
+#include <vector>
 
 #define _BSD_SOURCE 1
 
@@ -110,5 +111,9 @@ private:
 void quit_cb(int i);
 
 const char *getVersion();
+
+extern bool freezeSorting;
+extern std::vector<pid_t> frozenPids;
+extern std::vector<pid_t> lastSortedPids;
 
 #endif

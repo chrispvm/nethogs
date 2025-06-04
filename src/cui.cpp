@@ -28,6 +28,8 @@
 #include <string>
 #include <strings.h>
 #include <sys/types.h>
+#include <climits>
+#include <vector>
 
 #include "nethogs.h"
 #include "process.h"
@@ -48,6 +50,9 @@ extern bool sortRecv;
 extern int viewMode;
 extern bool showcommandline;
 extern bool showBasename;
+extern bool freezeSorting;
+extern std::vector<pid_t> frozenPids;
+extern std::vector<pid_t> lastSortedPids;
 
 extern unsigned refreshlimit;
 extern unsigned refreshcount;
@@ -90,6 +95,7 @@ public:
 
   void show(int row, unsigned int proglen, unsigned int devlen);
   void log();
+  pid_t get_pid() const { return m_pid; }
 
   double sent_value;
   double recv_value;
@@ -277,6 +283,18 @@ int GreatestFirst(const void *ma, const void *mb) {
   return 1;
 }
 
+int FrozenOrder(const void *ma, const void *mb) {
+  Line *a = *(Line **)ma;
+  Line *b = *(Line **)mb;
+  auto ita = std::find(frozenPids.begin(), frozenPids.end(), a->get_pid());
+  auto itb = std::find(frozenPids.begin(), frozenPids.end(), b->get_pid());
+  int ia = (ita == frozenPids.end()) ? INT_MAX : std::distance(frozenPids.begin(), ita);
+  int ib = (itb == frozenPids.end()) ? INT_MAX : std::distance(frozenPids.begin(), itb);
+  if (ia != ib)
+    return ia - ib;
+  return GreatestFirst(ma, mb);
+}
+
 void init_ui() {
   WINDOW *screen = initscr();
   cursOrig = curs_set(0);
@@ -322,6 +340,12 @@ void ui_tick() {
   case 'b':
     /* show only the process basename */
     showBasename = !showBasename;
+    break;
+  case 'o':
+    /* toggle process order freeze */
+    freezeSorting = !freezeSorting;
+    if (freezeSorting)
+      frozenPids = lastSortedPids;
     break;
   }
 }
@@ -451,7 +475,15 @@ void do_refresh() {
   }
 
   /* sort the accumulated lines */
-  qsort(lines, nproc, sizeof(Line *), GreatestFirst);
+  if (freezeSorting) {
+    qsort(lines, nproc, sizeof(Line *), FrozenOrder);
+  } else {
+    qsort(lines, nproc, sizeof(Line *), GreatestFirst);
+    lastSortedPids.clear();
+    for (int i = 0; i < nproc; i++) {
+      lastSortedPids.push_back(lines[i]->get_pid());
+    }
+  }
 
   if (tracemode || DEBUG)
     show_trace(lines, nproc);

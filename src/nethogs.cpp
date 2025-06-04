@@ -31,6 +31,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <string>
+#include <vector>
 #include <unistd.h>
 
 #include <netinet/ip.h>
@@ -61,6 +62,9 @@ bool bughuntmode = false;
 bool sortRecv = true;
 bool showcommandline = false;
 bool showBasename = false;
+bool freezeSorting = false;
+std::vector<pid_t> frozenPids;
+std::vector<pid_t> lastSortedPids;
 // viewMode: kb/s or total
 int viewMode = VIEWMODE_KBPS;
 const char version[] = " version " VERSION;

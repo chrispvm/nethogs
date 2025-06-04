@@ -69,6 +69,7 @@ static void help(bool iserror) {
   output << " b: display the program basename instead of the fullpath\n";
   output << " m: switch between total (kB, bytes, MB) and throughput (kB/s, "
             " MB/s, GB/s) mode\n";
+  output << " o: toggle sorting on/off\n";
 }
 
 void quit_cb(int /* i */) {
